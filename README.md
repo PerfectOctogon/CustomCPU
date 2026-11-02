@@ -9,3 +9,14 @@ Build my own CPU with my own instruction set, then grow it into a toolchain wher
 Hardware generation is realistic for a limited set of instructions with no recursion.
 
 Design document (updated regularly): https://docs.google.com/document/d/1YHeN4AueAq_CrUQ3DLEFPw6QuZ-A1WtcalHHmcInZME/edit?usp=sharing
+
+## Building
+
+### Tools required:
+
+icarus-verilog
+
+### Compile ALU + run tests:
+
+iverilog -o alu_tb.vvp rtl/alu.v tb/alu_tb.v
+vvp alu_tb.vvp
