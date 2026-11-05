@@ -14,9 +14,9 @@ Design document (updated regularly): https://docs.google.com/document/d/1YHeN4Au
 
 ### Tools required:
 
-icarus-verilog
+`icarus-verilog`
 
 ### Compile + run tests:
 
-iverilog -o *_tb.vvp rtl/*.v tb/*.v
-vvp *.vvp
+`iverilog -o *_tb.vvp rtl/*.v tb/*.v`
+`vvp *.vvp`

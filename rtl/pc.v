@@ -2,9 +2,9 @@
 
 module pc(
 	input wire reset,
-  	input wire enable,
-  	input wire load,
-  	input wire clk,
+  input wire enable,
+  input wire load,
+  input wire clk,
   input wire [15:0] jump_addr,
   output reg [15:0] pc_out
 );
