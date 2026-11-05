@@ -16,7 +16,7 @@ Design document (updated regularly): https://docs.google.com/document/d/1YHeN4Au
 
 icarus-verilog
 
-### Compile ALU + run tests:
+### Compile + run tests:
 
-iverilog -o alu_tb.vvp rtl/alu.v tb/alu_tb.v
-vvp alu_tb.vvp
+iverilog -o *_tb.vvp rtl/*.v tb/*.v
+vvp *.vvp
