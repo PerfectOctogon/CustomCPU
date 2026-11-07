@@ -27,6 +27,16 @@ module decoder(
     localparam WB_RS = 2'b10;
     localparam WB_MEM = 2'b11;
 
+    // Memory and move bits
+    localparam OP_MOV = 2'b00;
+    localparam OP_LOAD = 2'b01;
+    localparam OP_STORE = 2'b10;
+
+    // Control flow bits
+    localparam OP_JMP = 2'b00;
+    localparam OP_JZ = 2'b01;
+    localparam OP_OUT = 2'b10;
+
     always @(posedge clk) begin
         //defaults
         alu_op = 0;
@@ -72,7 +82,26 @@ module decoder(
 
                 // Memory and moves
                 OP_MOV: begin
-                    
+                    case (instr[11:10])
+                        OP_MOV: begin
+                            is_reg_write <= 1;
+                            write_sel <= WB_RS;
+                            is_mem_write <= 0;
+                        end
+
+                        OP_LOAD: begin
+                            is_reg_write <= 1;
+                            write_sel <= WB_MEM;
+                            is_mem_write <= 0;
+                            is_load = 1;
+                        end
+
+                        OP_STORE: begin
+                            is_reg_write = 0;
+                            write_sel = WB_RS;
+                            is_mem_write = 1;
+                        end
+                    endcase
                 end
 
                 // Control flow
