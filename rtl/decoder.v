@@ -42,8 +42,6 @@ module decoder(
 
         if (instr == 0) begin
             is_halt <= 1;
-            is_reg_write = 0;
-            is_mem_write = 0;
         end else begin
 
             case (instr[15:14])
@@ -52,15 +50,29 @@ module decoder(
                     alu_op <= instr[13:10];
                     is_alu_b_imm <= 0;
                     is_reg_write <= 1;
+                    is_mem_write <= 0;
                     write_sel <= WB_ALU;
                 end
                 
                 // Immediates
                 OP_IMM: begin
+                    // check if this is a non-ALU op (LI)
+                    if (instr[13:10] == 4'b0000) begin
+                        is_reg_write <= 1;
+                        is_mem_write <= 0;
+                        write_sel <= WB_IMM;
+                    end else begin
+                        alu_op <= instr[13:10];
+                        is_alu_b_imm <= 1;
+                        is_reg_write <= 1;
+                        write_sel <= WB_ALU;
+                        is_mem_write <= 0;
+                    end
                 end
 
                 // Memory and moves
                 OP_MOV: begin
+                    
                 end
 
                 // Control flow
