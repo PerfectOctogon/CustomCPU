@@ -1,7 +1,6 @@
 `default_nettype none
 
 module decoder(
-    input wire clk,
     input wire [15:0] instr,
     output reg [3:0] alu_op,
     output reg is_alu_b_imm,
@@ -18,7 +17,7 @@ module decoder(
     // Groups
     localparam OP_ALU = 2'b00;
     localparam OP_IMM = 2'b01;
-    localparam OP_MOV = 2'b10;
+    localparam OP_MEMOV = 2'b10;
     localparam OP_CFL = 2'b11;
 
     // Write selection
@@ -37,7 +36,7 @@ module decoder(
     localparam OP_JZ = 2'b01;
     localparam OP_OUT = 2'b10;
 
-    always @(posedge clk) begin
+    always @(*) begin
         //defaults
         alu_op = 0;
         is_alu_b_imm = 0;
@@ -50,49 +49,49 @@ module decoder(
         is_out = 0;
         is_halt = 0;
 
-        if (instr == 0) begin
-            is_halt <= 1;
+        if (instr[15:10] == 6'b000000) begin
+            is_halt = 1;
         end else begin
 
             case (instr[15:14])
                 // ALU operations
                 OP_ALU: begin
-                    alu_op <= instr[13:10];
-                    is_alu_b_imm <= 0;
-                    is_reg_write <= 1;
-                    is_mem_write <= 0;
-                    write_sel <= WB_ALU;
+                    alu_op = instr[13:10];
+                    is_alu_b_imm = 0;
+                    is_reg_write = 1;
+                    is_mem_write = 0;
+                    write_sel = WB_ALU;
                 end
                 
                 // Immediates
                 OP_IMM: begin
                     // check if this is a non-ALU op (LI)
                     if (instr[13:10] == 4'b0000) begin
-                        is_reg_write <= 1;
-                        is_mem_write <= 0;
-                        write_sel <= WB_IMM;
+                        is_reg_write = 1;
+                        is_mem_write = 0;
+                        write_sel = WB_IMM;
                     end else begin
-                        alu_op <= instr[13:10];
-                        is_alu_b_imm <= 1;
-                        is_reg_write <= 1;
-                        write_sel <= WB_ALU;
-                        is_mem_write <= 0;
+                        alu_op = instr[13:10];
+                        is_alu_b_imm = 1;
+                        is_reg_write = 1;
+                        write_sel = WB_ALU;
+                        is_mem_write = 0;
                     end
                 end
 
                 // Memory and moves
-                OP_MOV: begin
+                OP_MEMOV: begin
                     case (instr[11:10])
                         OP_MOV: begin
-                            is_reg_write <= 1;
-                            write_sel <= WB_RS;
-                            is_mem_write <= 0;
+                            is_reg_write = 1;
+                            write_sel = WB_RS;
+                            is_mem_write = 0;
                         end
 
                         OP_LOAD: begin
-                            is_reg_write <= 1;
-                            write_sel <= WB_MEM;
-                            is_mem_write <= 0;
+                            is_reg_write = 1;
+                            write_sel = WB_MEM;
+                            is_mem_write = 0;
                             is_load = 1;
                         end
 
@@ -106,9 +105,21 @@ module decoder(
 
                 // Control flow
                 OP_CFL: begin
+                    case (instr[11:10])
+                        OP_JMP: begin
+                            is_jump = 1;
+                        end
+
+                        OP_JZ: begin
+                            is_jz = 1;
+                        end
+
+                        OP_OUT: begin
+                            is_out = 1;
+                        end
+                    endcase
                 end
             endcase
-
         end
     end
 
