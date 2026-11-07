@@ -21,25 +21,54 @@ module decoder(
     localparam OP_MOV = 2'b10;
     localparam OP_CFL = 2'b11;
 
+    // Write selection
+    localparam WB_ALU = 2'b00;
+    localparam WB_IMM = 2'b01;
+    localparam WB_RS = 2'b10;
+    localparam WB_MEM = 2'b11;
+
     always @(posedge clk) begin
-        
-        case (instr[15:14])
-            // ALU operations
-            OP_ALU: begin
-            end
-            
-            // Immediates
-            OP_IMM: begin
-            end
+        //defaults
+        alu_op = 0;
+        is_alu_b_imm = 0;
+        is_reg_write = 0;
+        write_sel = 0;
+        is_mem_write = 0;
+        is_load = 0;
+        is_jump = 0;
+        is_jz = 0;
+        is_out = 0;
+        is_halt = 0;
 
-            // Memory and moves
-            OP_MOV: begin
-            end
+        if (instr == 0) begin
+            is_halt <= 1;
+            is_reg_write = 0;
+            is_mem_write = 0;
+        end else begin
 
-            // Control flow
-            OP_CFL: begin
-            end
-        endcase
+            case (instr[15:14])
+                // ALU operations
+                OP_ALU: begin
+                    alu_op <= instr[13:10];
+                    is_alu_b_imm <= 0;
+                    is_reg_write <= 1;
+                    write_sel <= WB_ALU;
+                end
+                
+                // Immediates
+                OP_IMM: begin
+                end
+
+                // Memory and moves
+                OP_MOV: begin
+                end
+
+                // Control flow
+                OP_CFL: begin
+                end
+            endcase
+
+        end
     end
 
 endmodule
