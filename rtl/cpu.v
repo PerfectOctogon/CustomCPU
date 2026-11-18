@@ -1,18 +1,23 @@
 `default_nettype none
 
 module cpu(
-    input wire clk
+    input wire clk,
+    input wire reset,
+    output reg [15:0] out_val,
+    output wire halted
 );
 
+    // Write selection
+    localparam wb_ALU = 2'b00;
+    localparam wb_IMM = 2'b01;
+    localparam wb_RSC = 2'b10;
+    localparam wb_MEM = 2'b11;
+
     // PC wires
-    wire pc_reset;
-    wire pc_enable;
-    wire pc_load;
-    wire [15:0] pc_jump_addr;
-    reg [15:0] pc_out;
+    wire [15:0] pc_out;
 
     // IMEM wires
-    wire imem_instr_out
+    wire [15:0] imem_instr_out;
 
     // Decoder wires
     wire dec_is_alu_b_imm;
@@ -27,7 +32,6 @@ module cpu(
     wire dec_is_halt;
 
     // Control unit wires
-    wire ctrl_reset;
     wire ctrl_rd_is_zero;
     wire ctrl_reg_write_en;
     wire ctrl_mem_write_en;
@@ -37,9 +41,6 @@ module cpu(
     wire ctrl_halted;
 
     // Register file wires
-    wire reg_reset;
-    wire reg_write_addr;
-    wire [15:0] reg_write_data;
     wire [15:0] reg_read_data_a;
     wire [15:0] reg_read_data_b;
 
@@ -49,14 +50,41 @@ module cpu(
     wire alu_overflow;
 
     // Dmem wires
-    wire dmem_read_data;
+    wire [15:0] dmem_read_data;
+
+    reg [15:0] write_data;
+
+    // assignments
+    always @(*) begin
+        if (dec_write_sel == wb_ALU) begin
+            write_data = alu_result;
+        end
+        else if (dec_write_sel == wb_IMM) begin
+            write_data = imem_instr_out[4:0];
+        end
+        else if (dec_write_sel == wb_MEM) begin
+            write_data = dmem_read_data;
+        end
+        else begin
+            write_data = reg_read_data_b;
+        end
+    end
+
+    always @(posedge clk) begin
+        out_val <= (ctrl_out_en) ? reg_read_data_a : out_val;
+    end
+
+    assign ctrl_rd_is_zero = (reg_read_data_a == 0) ? 1 : 0;
+    assign halted = ctrl_halted;
+
+    // module declarations
 
     pc mod_pc(
-        .reset          (pc_reset),
-        .enable         (pc_enable),
-        .load           (pc_load),
+        .reset          (reset),
+        .enable         (ctrl_pc_enable),
+        .load           (ctrl_pc_load),
         .clk            (clk),
-        .jump_addr      (pc_jump_addr),
+        .jump_addr      (reg_read_data_b),
         .pc_out         (pc_out)
     );
 
@@ -82,7 +110,7 @@ module cpu(
 
     control mod_control(
         .clk            (clk),
-        .reset          (ctrl_reset),
+        .reset          (reset),
         .is_reg_write   (dec_is_reg_write),
         .is_mem_write   (dec_is_mem_write),
         .is_jump        (dec_is_jump),
@@ -100,26 +128,24 @@ module cpu(
 
     // load = store into register from memory
     // store = store into memory from register
-    // write address = dec_is_load ? 
     regfile mod_regfile(
         .clk            (clk),
         .read_addr_a    (imem_instr_out[9:5]),
         .read_addr_b    (imem_instr_out[4:0]),
-        .write_enable   (ctrl_reg_write_en & (~ctrl_mem_write_en)),
-        .write_addr     (imem_instr_out[[9:5]]),
+        .write_enable   (ctrl_reg_write_en),
+        .write_addr     (imem_instr_out[9:5]),
         // is this data from memory or is it from a register or immediate(load vs mov)
         // choose using write_sel
-        .write_data     (),
-        .reset          (ctrl_reset),
+        .write_data     (write_data),
+        .reset          (reset),
         .read_data_a    (reg_read_data_a),
         .read_data_b    (reg_read_data_b)
     );
 
     alu mod_alu(
-        .a              (imem_instr_out[9:5]),
-        // use write_sel to choose from immediate vs register
-        .b              (),
-        .op             (imem_instr_out[12:10]),
+        .a              (reg_read_data_a),
+        .b              (dec_is_alu_b_imm ? imem_instr_out[4:0] : reg_read_data_b),
+        .op             (dec_alu_op),
         .result         (alu_result),
         .zero           (alu_zero),
         .overflow       (alu_overflow)
@@ -127,10 +153,10 @@ module cpu(
 
     dmem mod_dmem(
         .clk            (clk),
-        .addr           (imem_instr_out[9:5]),
-        .write_enable   (ctrl_mem_write_en & (~ctrl_reg_write_en)),
+        .addr           (reg_read_data_b),
+        .write_enable   (ctrl_mem_write_en),
         // this will always be a register read
-        .write_data     (),
+        .write_data     (reg_read_data_a),
         .read_data      (dmem_read_data)
     );
 
