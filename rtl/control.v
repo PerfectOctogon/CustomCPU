@@ -13,12 +13,12 @@ module control(
 
     input wire rd_is_zero,
 
-    output wire reg_write_en,
-    output wire mem_write_en,
-    output wire pc_enable,
-    output wire pc_load,
-    output wire out_en,
-    output wire halted
+    output reg reg_write_en,
+    output reg mem_write_en,
+    output reg pc_enable,
+    output reg pc_load,
+    output reg out_en,
+    output reg halted
 );
 
     // States
